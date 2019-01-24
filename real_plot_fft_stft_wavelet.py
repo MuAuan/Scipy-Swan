@@ -92,8 +92,7 @@ while True:
     plt.pause(1)
     #plt.close()
     plt.savefig('figure'+str(s)+'.png')
-    s += 1
-       
+           
     Fs = 1/0.0002
     omega0 = 5 #0.2 #1 #2 #8
     # (1)　Freqを指定してcwt
