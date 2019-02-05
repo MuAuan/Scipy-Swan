@@ -3,6 +3,10 @@ import wave
 import pyaudio
 import matplotlib.pyplot as plt
 import numpy as np
+import time
+import wave
+from scipy.fftpack import fft, ifft
+from scipy import signal
 
 def printWaveInfo(wf):
     """WAVEファイルの情報を取得"""
@@ -25,16 +29,39 @@ def plot_wav(filename,t1,t2):
     sig = np.frombuffer(data, dtype="int16")  /32768.0
     t = np.linspace(0,fs, fn/2, endpoint=False)
     fig = plt.figure(figsize=(12, 10))
-    ax1 = fig.add_subplot(211)
+    ax1 = fig.add_subplot(311)
+    ax2 = fig.add_subplot(312)
+    ax3 = fig.add_subplot(313)
+
     ax1.set_xlabel('Time [sec]')
     ax1.set_ylabel('Signal')
-
     ax1.set_ylim(-0.0075,0.0075)
     ax1.set_xlim(t1,t2)
     ax1.plot(t, sig)
     
-    plt.show()  
-    #ws.close()
+    nperseg = 1024
+    f, t, Zxx = signal.stft(sig, fs=fn, nperseg=nperseg)
+    ax2.pcolormesh(2*fs*t, f/fs/2, np.abs(Zxx), cmap='hsv')
+    ax2.set_xlim(t1,t2)
+    ax2.set_ylim(20,20000)
+    ax2.set_yscale('log')
+
+    freq =fft(sig,int(fn))
+    Pyy = np.sqrt(freq*freq.conj())*2/fn
+    f = np.arange(20,20000,(20000-20)/int(fn)) #RATE11025,22050;N50,100
+    ax3.set_ylim(0,0.000075)
+    ax3.set_xlim(20,20000)
+    ax3.set_xlabel('Freq[Hz]')
+    ax3.set_ylabel('Power')
+    ax3.set_xscale('log')
+    ax3.plot(f*fr/44100,Pyy)
+    
+    plt.savefig(filename+'.jpg')
+    plt.show()
+    #plt.savefig(filename+'.jpg')
+    
+    plt.close()  
+    ws.close()
     
     
 if __name__ == '__main__':
@@ -66,34 +93,34 @@ if __name__ == '__main__':
     stream.write(data)
     """
     frames = []
-    for i in range(0, int(RATE / 1024 * int(fs+0.5)+0.5)):
+    for i in range(0, int(RATE / 1024 *fs+0.5)):
         data = wf.readframes(1024)
         frames.append(data)
         stream.write(data)
-    print(int(RATE / 1024 * int(fs+0.5)+0.5))
+    print(int(RATE / 1024 * fs+0.5))
     
     t1=float(input('input t1='))
     t2=float(input('input t2='))
     plot_wav(filename,t1,t2)
-    
+        
     loff = wf.getnframes()/1024 #215 #len(frames)
     print(fs,loff,loff*t1/fs,loff*t2/fs)
     #wf.close()
     
-    wr = wave.open(filename+'_out.wav', 'wb')
+    wr = wave.open('wav/'+filename+'_out.wav', 'wb')
     wr.setnchannels(CHANNELS)
     wr.setsampwidth(width)  #width=2 ; 16bit
     wr.setframerate(RATE)
-    s1=int(loff*0.5*(t1)/fs)
+    s1=int(loff*(0.5*t1)/fs)
     s2=int(loff*(t2)/fs)-s1
     print(fs,loff,s1,s2,t1,t2)
     wr.writeframes(b''.join(frames[s1:s2]))  #int(loff*t2/fs)
     #wr.close()
 
-    fn = int(wf.getnframes()*(s2-s1)/loff+0.5)   #wr.getnframes()
+    fn = wr.getnframes()
     fs = float(fn / wr.getframerate())
     print(fn,fs)
-    plot_wav(filename+'_out',0,fs)
+    plot_wav('wav/'+filename+'_out',0,fs)
     
     stream.close()
     p.terminate()
