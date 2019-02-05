@@ -24,10 +24,11 @@ def plot_wav(filename,t1,t2):
     fr = ws.getframerate()
     fn = ws.getnframes()
     fs = fn / fr
-    origin = ws.readframes(ws.getnframes())
-    data = origin[:fn]
+    print(fn,fs)
+    origin = ws.readframes(fn)
+    data = origin[:]
     sig = np.frombuffer(data, dtype="int16")  /32768.0
-    t = np.linspace(0,fs, fn/2, endpoint=False)
+    t = np.linspace(0,fs, fn, endpoint=False)
     fig = plt.figure(figsize=(12, 10))
     ax1 = fig.add_subplot(311)
     ax2 = fig.add_subplot(312)
@@ -41,7 +42,7 @@ def plot_wav(filename,t1,t2):
     
     nperseg = 1024
     f, t, Zxx = signal.stft(sig, fs=fn, nperseg=nperseg)
-    ax2.pcolormesh(2*fs*t, f/fs/2, np.abs(Zxx), cmap='hsv')
+    ax2.pcolormesh(fs*t, f/fs/2, np.abs(Zxx), cmap='hsv')
     ax2.set_xlim(t1,t2)
     ax2.set_ylim(20,20000)
     ax2.set_yscale('log')
@@ -58,7 +59,6 @@ def plot_wav(filename,t1,t2):
     
     plt.savefig(filename+'.jpg')
     plt.show()
-    #plt.savefig(filename+'.jpg')
     
     plt.close()  
     ws.close()
@@ -69,7 +69,9 @@ if __name__ == '__main__':
     wf = wave.open(filename+".wav", "r")
     
     printWaveInfo(wf)
-    fs = float(wf.getnframes()) / wf.getframerate()
+    fr = wf.getframerate()
+    fn = wf.getnframes()
+    fs = float(fn / fr)
     plot_wav(filename,0,fs)
     
     # ストリームを開く
@@ -86,12 +88,7 @@ if __name__ == '__main__':
     #fn = wf.readframes(wf.getnframes())
     fn = wf.getnframes()
     fs = float(wf.getnframes()) / wf.getframerate()
-    #print(fs*RATE)
-    """
-    chunk = int(fs*RATE) #220160 #1024
-    data = wf.readframes(chunk)
-    stream.write(data)
-    """
+
     frames = []
     for i in range(0, int(RATE / 1024 *fs+0.5)):
         data = wf.readframes(1024)
@@ -111,8 +108,8 @@ if __name__ == '__main__':
     wr.setnchannels(CHANNELS)
     wr.setsampwidth(width)  #width=2 ; 16bit
     wr.setframerate(RATE)
-    s1=int(loff*(0.5*t1)/fs)
-    s2=int(loff*(t2)/fs)-s1
+    s1=int(loff*(t1)/fs)
+    s2=int(loff*(t2)/fs)
     print(fs,loff,s1,s2,t1,t2)
     wr.writeframes(b''.join(frames[s1:s2]))  #int(loff*t2/fs)
     #wr.close()
