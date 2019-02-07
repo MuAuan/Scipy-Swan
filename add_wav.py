@@ -90,16 +90,21 @@ if __name__ == '__main__':
     filename2=input('input original filename=')
     wf2,stream2,fr2,fn2,fs2,width2,CHANNELS2 = fileOpen(filename2)
     
+    fc1=int(input('input factor1='))
+    fc2=int(input('input factor2='))
+    
     frames = []
     for i in range(0, int(fr1 / 1024 *fs1+0.5)):
         data = wf1.readframes(1024)
-        frames.append(data)
-        stream1.write(data)
-    
+        g1 = fc1*np.frombuffer(data, dtype= "int16") #/32768.0    # -1～1に正規化 #g1は演算できる
+        frames.append(g1)
+        stream1.write(g1)
+        
     for i in range(0, int(fr2 / 1024 *fs2+0.5)):
         data2 = wf2.readframes(1024)
-        frames.append(data2)
-        stream2.write(data2)
+        g2 = fc2*np.frombuffer(data2, dtype= "int16") #/32768.0    # -1～1に正規化　#g2は演算できる
+        frames.append(g2)
+        stream2.write(g2)
 
     loff1 = wf1.getnframes()/1024 #215 #len(frames)
     loff2 = wf2.getnframes()/1024 #215 #len(frames)
